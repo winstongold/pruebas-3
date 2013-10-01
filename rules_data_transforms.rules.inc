@@ -8,6 +8,7 @@
 /**
  * Implements hook_rules_action_info().
  */
+
 function rules_data_transforms_rules_action_info() {
   $defaults = array(
     'group' => t('Data Transforms'),
@@ -305,6 +306,53 @@ function rules_data_transforms_rules_action_info() {
         ),
       ),
     ) + $defaults,
+    'fix_nbsp' => array(
+      'label' => t('Replace non break space character with space character'),
+      'base' => 'rules_data_transforms_action_fix_nbsp',
+      'provides' => array(
+        'nbsp_fixed_text' => array(
+          'type' => 'text',
+          'label' => t('Fixed text'),
+        ),
+      ),
+    ) + $defaults,
+    'fix_space' => array(
+      'label' => t('Replace space character with space hyphen'),
+      'base' => 'rules_data_transforms_action_fix_space',
+       'parameter' => array(
+       'input_text' => array(
+          'type' => 'text',
+          'label' => t('Input text'),
+        ),
+         
+        'select' => array(
+          'type' => 'text',
+          'label' => t('Select'),
+          'options list' => '_rules_data_transforms_select_options',
+          'default value' => 'all',
+        ),  
+       'input_character' => array(
+          'type' => 'text',
+          'label' => t('Input Character'),
+         'description' => t('Insert the separator character to search (leave blank to remove all blanks)'),
+          'optional' => TRUE,
+        ),  
+        'output_character' => array(
+        'type' => 'text',
+        'label' => t('Output Character'),
+        'description' => t('Insert the separator character to replace spaces: example a,b,c,d,e... +,*,# etc.  (leave blank to remove all blanks)'),
+        'optional' => TRUE,
+        ),  
+      ),
+      'provides' => array(
+        'space_fixed_text' => array(
+          'type' => 'text',
+          'label' => t('Space text'),
+        ),
+       
+       
+      ),
+    ) + $defaults,
   );
 }
 
@@ -450,4 +498,33 @@ function _rules_data_transforms_permute($string) {
 
 function rules_data_transforms_action_permute_text($input_text) {
   return array('permutation_list' => array_unique(_rules_data_transforms_permute($input_text)));
+}
+
+
+
+function rules_data_transforms_action_fix_nbsp($input_text) {
+  return array('nbsp_fixed_text' => preg_replace("/\xC2\xA0/", ' ', $input_text));
+}
+
+
+function _rules_data_transforms_select_options() {
+  return array('cleaning' => t('Cleaning'), 'nospaces' => t('Nospaces'), 'replacement' => t('Replacement'));
+}
+
+function rules_data_transforms_action_fix_space($input_text, $select, $input_character, $output_character) {
+  
+    switch ($select) {
+    case 'cleaning':      
+      return array('space_fixed_text' => preg_replace('/\s\s+/', ' ', $input_text));
+      break;
+    case 'nospaces':   
+      return array('space_fixed_text' => str_replace(' ', '', $input_text));
+      break;
+    case 'replacement':
+       if (isset($input_character)) {
+       return array('space_fixed_text' => str_replace($input_character, $output_character, $input_text));      
+       }       
+       return array('space_fixed_text' => preg_replace('/\s\s+/', $output_character, $input_text));            
+      break;
+    }
 }
